@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ButtonBar?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+<?import javafx.scene.text.Text?>
+
+<AnchorPane fx:id="anchorPane" prefHeight="498.0" prefWidth="682.0" styleClass="form_container" stylesheets="@../css/style.css" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="sn.groupeisi.etudiantappjavafx.EtudiantController">
+    <children>
+        <Text layoutX="268.0" layoutY="30.0" strokeType="OUTSIDE" strokeWidth="0.0" styleClass="title" text=" CRUD ETUDIANT">
+            <font>
+                <Font size="24.0" />
+            </font>
+        </Text>
+        <TableView fx:id="etudiantsTbl" layoutX="195.0" layoutY="69.0" onMouseClicked="#getData" prefHeight="331.0" prefWidth="481.0">
+            <columns>
+                <TableColumn fx:id="idCol" prefWidth="25.33331298828125" text="ID" />
+                <TableColumn fx:id="matriculeCol" prefWidth="146.00001525878906" text="MATRICULE" />
+                <TableColumn fx:id="nomCol1" prefWidth="77.3333740234375" text="NOM" />
+                <TableColumn fx:id="prenomCol" prefWidth="104.66665649414062" text="PRENOM" />
+                <TableColumn fx:id="moyenneCol" prefWidth="64.6666259765625" text="MOYENNE" />
+                <TableColumn fx:id="classeCol" prefWidth="65.3333740234375" text="CLASSE" />
+            </columns>
+        </TableView>
+        <ButtonBar layoutX="123.0" layoutY="326.0" prefHeight="40.0" prefWidth="83.0" />
+        <VBox layoutY="65.0" prefHeight="355.0" prefWidth="189.0">
+            <children>
+                <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Prenom" />
+                <TextField fx:id="prenomTfd" prefHeight="0.0" prefWidth="168.0" />
+                <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Nom" />
+                <TextField fx:id="nomTfd" />
+                <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Moyenne" />
+                <TextField fx:id="moyenneTfd" />
+                <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Classe" />
+                <ComboBox fx:id="classeTfd" prefHeight="25.0" prefWidth="166.0" promptText="Selectionner une classe !" />
+            </children>
+        </VBox>
+        <Button fx:id="enregistrerBtn" layoutX="124.0" layoutY="441.0" mnemonicParsing="false" onAction="#save" text="Enregistrer" />
+        <Button fx:id="modifierBtn" layoutX="227.0" layoutY="441.0" mnemonicParsing="false" onAction="#update" text="Modifier" />
+        <Button fx:id="supprimerBtn" layoutX="329.0" layoutY="441.0" mnemonicParsing="false" onAction="#delete" text="Supprimer" />
+        <Button fx:id="effacerBtn" layoutX="431.0" layoutY="441.0" mnemonicParsing="false" onAction="#vider" text="Effacer" />
+    </children>
+</AnchorPane>
