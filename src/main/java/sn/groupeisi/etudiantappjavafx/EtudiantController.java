@@ -16,6 +16,8 @@ import java.net.URL;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ResourceBundle;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class EtudiantController implements Initializable {
     private DBConnexion db = new DBConnexion();
@@ -167,45 +169,57 @@ public class EtudiantController implements Initializable {
     //Méthode pour ajouter un étudiant
     @FXML
     void save(ActionEvent event) {
-        String sql = "INSERT INTO etudiant(id, matricule, nom, prenom, moyenne, classe_id) VALUES(DEFAULT,?,?,?,?,?)";
+        String sqlInsert = "INSERT INTO etudiant(id, matricule, nom, prenom, moyenne, classe_id) VALUES(DEFAULT,?,?,?,?,?)";
+        String sqlUpdate = "UPDATE classe SET effectif = effectif + 1 WHERE id = ?";
 
         try {
             // Récupérer la classe sélectionnée
             Classe selectedClasse = classeTfd.getSelectionModel().getSelectedItem();
-            // Nom de la classe ou valeur par défaut
-            String nomClasse = selectedClasse != null ? selectedClasse.getNom() : "INCONNU";
-
-            // Créer un objet Etudiant et générer le matricule
-            Etudiant etudiant = new Etudiant();
-            String matricule = etudiant.generateMatricule(nomClasse);
-
-            db.initPrepar(sql);
-            db.getPstm().setString(1, matricule);
-            db.getPstm().setString(2, nomTfd.getText());
-            db.getPstm().setString(3, prenomTfd.getText());
-            db.getPstm().setDouble(4, Double.parseDouble(moyenneTfd.getText()));
-
-            // Récupére l'ID de la classe sélectionnée
-            int classeId = selectedClasse != null ? selectedClasse.getId() : 0;
-            db.getPstm().setInt(5, classeId);
-
-            //Control la moyenne saisie
-            double moyenne = Double.parseDouble(moyenneTfd.getText());
-            if (moyenne > 20){
-                Notification.NotifError("Erreur", "Moyenne ne doit pas être supérieur à 20");
+            if (selectedClasse == null) {
+                Notification.NotifError("Erreur", "Veuillez sélectionner une classe !");
                 return;
             }
 
-            db.executeMaj();
+            // Vérifier et récupérer la moyenne saisie
+            double moyenne = Double.parseDouble(moyenneTfd.getText());
+            if (moyenne > 20) {
+                Notification.NotifError("Erreur", "Moyenne ne doit pas être supérieure à 20 !");
+                return;
+            }
+
+            // Générer le matricule
+            Etudiant etudiant = new Etudiant();
+            String matricule = etudiant.generateMatricule(selectedClasse.getNom());
+
+            // Exécuter l'insertion
+            db.initPrepar(sqlInsert);
+            db.getPstm().setString(1, matricule);
+            db.getPstm().setString(2, nomTfd.getText());
+            db.getPstm().setString(3, prenomTfd.getText());
+            db.getPstm().setDouble(4, moyenne);
+            db.getPstm().setInt(5, selectedClasse.getId());
+
+            int ok = db.executeMaj();
+
+            // Si insertion réussie, mettre à jour l'effectif de la classe
+            if (ok == 1) {
+                db.initPrepar(sqlUpdate);
+                db.getPstm().setInt(1, selectedClasse.getId());
+                db.executeMaj();
+            }
+
             db.closeConnection();
             loadTable();
             clearFields();
-            Notification.NotifSuccess("Succés", "Etudiant enregistré avec succés !");
+            Notification.NotifSuccess("Succès", "Étudiant enregistré avec succès !");
         } catch (SQLException e) {
             e.printStackTrace();
+            Notification.NotifError("Erreur", "Une erreur s'est produite lors de l'enregistrement !");
+        } catch (NumberFormatException e) {
+            Notification.NotifError("Erreur", "Veuillez entrer une moyenne valide !");
         }
-
     }
+
 
     //Méthode pour vider le formulaire
     public void clearFields(){
@@ -223,60 +237,153 @@ public class EtudiantController implements Initializable {
     //Méthode pour modifier un étudiant
     @FXML
     void update(ActionEvent event) {
-        String sql = "UPDATE etudiant SET nom = ?, prenom = ?, moyenne = ?, classe_id = ? WHERE id = ?";
+        String selectClasseSql = "SELECT nom FROM classe WHERE id = ?";
+        String selectSql = "SELECT classe_id, matricule FROM etudiant WHERE id = ?";
+        String updateSql = "UPDATE etudiant SET matricule = ?, nom = ?, prenom = ?, moyenne = ?, classe_id = ? WHERE id = ?";
+
+        String existingMatricule = null;
+        int existingClasseId = -1;
 
         try {
-            // Récupérer la classe sélectionnée
+            // Récupération de la classe sélectionnée
             Classe selectedClasse = classeTfd.getSelectionModel().getSelectedItem();
-            String nomClasse = selectedClasse != null ? selectedClasse.getNom() : "INCONNU";
+            if (selectedClasse == null) {
+                Notification.NotifError("Erreur", "Veuillez sélectionner une classe !");
+                return;
+            }
+            int newClasseId = selectedClasse.getId();
+            String nomClasse = selectedClasse.getNom();
 
-            db.initPrepar(sql);
-            db.getPstm().setString(1, nomTfd.getText());
-            db.getPstm().setString(2, prenomTfd.getText());
-            db.getPstm().setDouble(3, Double.parseDouble(moyenneTfd.getText()));
+            // Étape 1 : Récupérer la classe et le matricule actuels
+            db.initPrepar(selectSql);
+            db.getPstm().setInt(1, id);
+            ResultSet rs = db.executeSelect();
 
-            // Récupérer l'ID de la classe sélectionnée
-            int classeId = selectedClasse != null ? selectedClasse.getId() : 0;
-            db.getPstm().setInt(4, classeId);
-            db.getPstm().setInt(5, id);
+            if (rs.next()) {
+                existingClasseId = rs.getInt("classe_id");
+                existingMatricule = rs.getString("matricule");
+            }
+            rs.close();
+            db.closeConnection();
 
-            //Control la moyenne saisie
+            // Étape 2 : Si la classe a changé, mettre à jour le matricule
+            String newMatricule = existingMatricule;
+            if (existingMatricule != null && existingClasseId != newClasseId) {
+                db.initPrepar(selectClasseSql);
+                db.getPstm().setInt(1, newClasseId);
+                ResultSet rsClasse = db.executeSelect();
+
+                if (rsClasse.next()) {
+                    nomClasse = rsClasse.getString("nom");
+                    String regex = "ET@(\\d{14})(.*?)#";
+                    Matcher matcher = Pattern.compile(regex).matcher(existingMatricule);
+                    if (matcher.find()) {
+                        String datePart = matcher.group(1);
+                        newMatricule = "ET@" + datePart + nomClasse + "#";
+                    }
+                }
+                rsClasse.close();
+                db.closeConnection();
+            }
+
+            // Vérification de la moyenne
             double moyenne = Double.parseDouble(moyenneTfd.getText());
-            if (moyenne > 20){
-                Notification.NotifError("Erreur", "Moyenne ne doit pas être supérieur à 20");
+            if (moyenne > 20) {
+                Notification.NotifError("Erreur", "La moyenne ne doit pas dépasser 20 !");
                 return;
             }
 
+            // Étape 3 : Exécuter la mise à jour
+            db.initPrepar(updateSql);
+            db.getPstm().setString(1, newMatricule);
+            db.getPstm().setString(2, nomTfd.getText());
+            db.getPstm().setString(3, prenomTfd.getText());
+            db.getPstm().setDouble(4, moyenne);
+            db.getPstm().setInt(5, newClasseId);
+            db.getPstm().setInt(6, id);
             db.executeMaj();
+
+            if (existingClasseId != newClasseId) {
+                String decreaseOldClassSql = "UPDATE classe SET effectif = effectif - 1 WHERE id = ?";
+                String increaseNewClassSql = "UPDATE classe SET effectif = effectif + 1 WHERE id = ?";
+
+                try {
+                    // Diminuer l'effectif de l'ancienne classe
+                    db.initPrepar(decreaseOldClassSql);
+                    db.getPstm().setInt(1, existingClasseId);
+                    db.executeMaj();
+                    db.closeConnection();
+
+                    // Augmenter l'effectif de la nouvelle classe
+                    db.initPrepar(increaseNewClassSql);
+                    db.getPstm().setInt(1, newClasseId);
+                    db.executeMaj();
+                    db.closeConnection();
+
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                    Notification.NotifError("Erreur SQL", "Mise à jour des effectifs des classes échouée !");
+                }
+            }
+
+
             db.closeConnection();
+
+            // Rafraîchir l'affichage
             loadTable();
             clearFields();
-            Notification.NotifSuccess("Succés", "Etudiant modifié avec succés !");
+            Notification.NotifSuccess("Succès", "Étudiant modifié avec succès !");
             enregistrerBtn.setDisable(false);
+
         } catch (SQLException e) {
             e.printStackTrace();
+            Notification.NotifError("Erreur SQL", "Une erreur est survenue lors de la mise à jour.");
+        } catch (NumberFormatException e) {
+            Notification.NotifError("Erreur de saisie", "Veuillez entrer une valeur numérique valide pour la moyenne !");
         }
-
-
     }
+
 
     //Méthode pour supprimer un étudiant
     @FXML
     void delete(ActionEvent event) {
-        String sql = "DELETE FROM etudiant WHERE id = ?";
-        try{
-            db.initPrepar(sql);
+        String sqlSelect = "SELECT classe_id FROM etudiant WHERE id = ?";
+        String sqlDelete = "DELETE FROM etudiant WHERE id = ?";
+        String sqlUpdate = "UPDATE classe SET effectif = effectif - 1 WHERE id = ?";
+
+        try {
+            // Récupérer l'ID de la classe de l'étudiant
+            db.initPrepar(sqlSelect);
             db.getPstm().setInt(1, id);
-            db.executeMaj();
+            ResultSet rs = db.executeSelect();
+
+            int idClasse = -1;
+            if (rs.next()) {
+                idClasse = rs.getInt("classe_id");
+            }
+            rs.close();
+
+            // Supprimer l'étudiant
+            db.initPrepar(sqlDelete);
+            db.getPstm().setInt(1, id);
+            int ok = db.executeMaj();
+
+            // Si suppression réussie et que l'étudiant avait une classe, on met à jour l'effectif
+            if (ok == 1 && idClasse != -1) {
+                db.initPrepar(sqlUpdate);
+                db.getPstm().setInt(1, idClasse);
+                db.executeMaj();
+            }
+
             db.closeConnection();
             loadTable();
             clearFields();
-            Notification.NotifSuccess("Succés", "Etudiant supprimé avec succés !");
+            Notification.NotifSuccess("Succès", "Étudiant supprimé avec succès !");
         } catch (SQLException e) {
             e.printStackTrace();
         }
-
     }
+
 
     // Méthode pour recupérer les infos d'un étudiant pour modifier ou supprimé
     @FXML

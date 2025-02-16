@@ -31,7 +31,7 @@ public class LoginController {
             if (u != null) {
                 try {
                     Notification.NotifSuccess("Succès", "Connexion Réussie !");
-                    Outils.load(event, "Gestion des Etudiants", "/FXML/etudiants.fxml");
+                    Outils.load(event, "Gestion ISI", "/FXML/index.fxml");
 
                 } catch (Exception e) {
                     e.printStackTrace();

@@ -1,14 +1,44 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import java.lang.*?>
-<?import java.util.*?>
-<?import javafx.scene.*?>
-<?import javafx.scene.control.*?>
-<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ButtonBar?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+<?import javafx.scene.text.Text?>
 
-<AnchorPane xmlns="http://javafx.com/javafx"
-            xmlns:fx="http://javafx.com/fxml"
-            fx:controller="sn.groupeisi.etudiantappjavafx.ClasseController"
-            prefHeight="400.0" prefWidth="600.0">
 
+<AnchorPane prefHeight="467.0" prefWidth="652.0" styleClass="form_container" stylesheets="@../css/style.css" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="sn.groupeisi.etudiantappjavafx.ClasseController">
+   <children>
+      <AnchorPane layoutX="-1.0" layoutY="-11.0" prefHeight="411.0" prefWidth="600.0">
+         <children>
+            <VBox layoutX="7.0" layoutY="156.0" prefHeight="99.0" prefWidth="189.0">
+               <children>
+                  <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Nom classe" wrappingWidth="85.97787475585938" />
+                  <TextField fx:id="nomTfd" prefHeight="24.0" prefWidth="168.0" />
+               </children>
+            </VBox>
+            <TableView fx:id="classeTbl" layoutX="196.0" layoutY="72.0" onMouseClicked="#getData" prefHeight="331.0" prefWidth="457.0">
+               <columns>
+                  <TableColumn fx:id="idCol" prefWidth="71.99995422363281" text="ID" />
+                  <TableColumn fx:id="nomCol1" prefWidth="199.3333740234375" text="NOM" />
+                  <TableColumn fx:id="effectifCol" prefWidth="183.99990844726562" text="EFFECTIF" />
+               </columns>
+            </TableView>
+         </children>
+      </AnchorPane>
+      <Text layoutX="278.0" layoutY="40.0" strokeType="OUTSIDE" strokeWidth="0.0" styleClass="title" text="GESTION DES CLASSES">
+         <font>
+            <Font size="24.0" />
+         </font>
+      </Text>
+      <ButtonBar layoutX="133.0" layoutY="336.0" prefHeight="40.0" prefWidth="83.0" />
+      <Button fx:id="enregistrerBtn" layoutX="133.0" layoutY="409.0" mnemonicParsing="false" onAction="#save" styleClass="form_container" stylesheets="@../css/style.css" text="Enregistrer" />
+      <Button fx:id="modifierBtn" layoutX="237.0" layoutY="409.0" mnemonicParsing="false" onAction="#update" styleClass="form_container" stylesheets="@../css/style.css" text="Modifier" />
+      <Button fx:id="supprimerBtn" layoutX="339.0" layoutY="409.0" mnemonicParsing="false" onAction="#delete" styleClass="form_container" stylesheets="@../css/style.css" text="Supprimer" />
+      <Button fx:id="effacerBtn" layoutX="441.0" layoutY="409.0" mnemonicParsing="false" onAction="#vider" styleClass="form_container" stylesheets="@../css/style.css" text="Effacer" />
+   </children>
 </AnchorPane>
